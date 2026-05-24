@@ -9,6 +9,14 @@ class Computer {
         this.ram = builder.ram;
     }
 
+    public String getHdd() {
+        return hdd;
+    }
+
+    public String getRam() {
+        return ram;
+    }
+
     public static class Builder {
         private String hdd;
         private String ram;
