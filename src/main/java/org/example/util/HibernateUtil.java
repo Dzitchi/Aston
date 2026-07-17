@@ -5,11 +5,11 @@ import org.hibernate.cfg.Configuration;
 
 public class HibernateUtil {
 
-    private static final SessionFactory sessionFactory = buildSessionFactory();
+    private static SessionFactory sessionFactory;
 
-    private static SessionFactory buildSessionFactory() {
+    private static void buildSessionFactory() {
         try {
-            return new Configuration()
+            sessionFactory = new Configuration()
                     .configure("hibernate.cfg.xml")
                     .buildSessionFactory();
         } catch (Exception e) {
@@ -18,10 +18,23 @@ public class HibernateUtil {
     }
 
     public static SessionFactory getSessionFactory() {
+        if (sessionFactory == null) {
+            buildSessionFactory();
+        }
         return sessionFactory;
     }
 
+    public static void setSessionFactory(SessionFactory factory) {
+
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
+        sessionFactory = factory;
+    }
+
     public static void shutdown() {
-        sessionFactory.close();
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 }

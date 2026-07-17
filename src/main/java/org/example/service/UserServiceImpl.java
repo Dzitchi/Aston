@@ -10,8 +10,15 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 public class UserServiceImpl implements UserService {
+    private final UserDao userDao;
 
-    private final UserDao userDao = new UserDaoImpl();
+    public UserServiceImpl() {
+        this(new UserDaoImpl());
+    }
+
+    public UserServiceImpl(UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @Override
     public void createUser(User user) {

@@ -26,7 +26,7 @@ public class UserDaoImpl implements UserDao {
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
@@ -77,7 +77,7 @@ public class UserDaoImpl implements UserDao {
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
@@ -104,7 +104,7 @@ public class UserDaoImpl implements UserDao {
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
