@@ -27,11 +27,11 @@ public class User {
     public User() {
     }
 
-    public User(String name, String email, Integer age, LocalDateTime createdAt) {
+    public User(String name, String email, Integer age) {
         this.name = name;
         this.email = email;
         this.age = age;
-        this.createdAt = createdAt;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {

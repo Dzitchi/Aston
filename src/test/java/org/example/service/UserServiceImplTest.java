@@ -1,16 +1,19 @@
 package org.example.service;
 
-import org.example.dao.UserDao;
+import org.example.dto.UserRequestDto;
+import org.example.dto.UserResponseDto;
 import org.example.entity.User;
-import org.example.exception.ValidationException;
+import org.example.exception.UserNotFoundException;
+import org.example.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,140 +22,189 @@ import static org.mockito.Mockito.*;
 class UserServiceImplTest {
 
     @Mock
-    private UserDao userDao;
+    private UserRepository userRepository;
 
+    @InjectMocks
     private UserServiceImpl userService;
+
+    private User user;
+    private UserRequestDto request;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userDao);
-    }
 
-    @Test
-    void createUser_ShouldSaveUser() {
-
-        User user = new User(
+        user = new User(
                 "Bob",
-                "bob@example.com",
-                20,
-                LocalDateTime.now()
+                "bob@test.com",
+                20
         );
 
-        userService.createUser(user);
-
-        verify(userDao).save(user);
-    }
-
-    @Test
-    void getUserById_ShouldReturnUser() {
-
-        User user = new User(
+        request = new UserRequestDto(
                 "Bob",
-                "bob@example.com",
-                20,
-                LocalDateTime.now()
+                "bob@test.com",
+                20
         );
-
-        when(userDao.findById(1L)).thenReturn(user);
-
-        User result = userService.getUserById(1L);
-
-        assertEquals(user, result);
-
-        verify(userDao).findById(1L);
     }
 
     @Test
-    void getAllUsers_ShouldReturnList() {
+    void create_ShouldCreateUser() {
 
-        List<User> users = List.of(
-                new User("Bob", "bob@example.com", 20, LocalDateTime.now()),
-                new User("Alex", "alex@example.com", 30, LocalDateTime.now())
+        when(userRepository.save(any(User.class)))
+                .thenReturn(user);
+
+        UserResponseDto result =
+                userService.create(request);
+
+        assertNotNull(result);
+        assertEquals("Bob", result.getName());
+        assertEquals("bob@test.com", result.getEmail());
+        assertEquals(20, result.getAge());
+
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void getById_ShouldReturnUser() {
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        UserResponseDto result =
+                userService.getById(1L);
+
+        assertNotNull(result);
+        assertEquals("Bob", result.getName());
+
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
+    void getById_ShouldThrowException_WhenUserNotFound() {
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                UserNotFoundException.class,
+                () -> userService.getById(1L)
         );
 
-        when(userDao.findAll()).thenReturn(users);
+        verify(userRepository).findById(1L);
+    }
 
-        List<User> result = userService.getAllUsers();
+    @Test
+    void getAll_ShouldReturnUsers() {
+
+        User secondUser = new User(
+                "Alex",
+                "alex@test.com",
+                25
+        );
+
+        when(userRepository.findAll())
+                .thenReturn(List.of(user, secondUser));
+
+        List<UserResponseDto> result =
+                userService.getAll();
 
         assertEquals(2, result.size());
 
-        verify(userDao).findAll();
-    }
-
-    @Test
-    void updateUser_ShouldCallDao() {
-
-        User user = new User(
+        assertEquals(
                 "Bob",
-                "bob@example.com",
-                25,
-                LocalDateTime.now()
+                result.get(0).getName()
         );
 
-        userService.updateUser(user);
-
-        verify(userDao).update(user);
-    }
-
-    @Test
-    void deleteUser_ShouldCallDao() {
-
-        userService.deleteUser(1L);
-
-        verify(userDao).delete(1L);
-    }
-
-    @Test
-    void createUser_ShouldThrowValidationException_WhenEmailInvalid() {
-
-        User user = new User(
-                "Bob",
-                "wrong_email",
-                20,
-                LocalDateTime.now()
+        assertEquals(
+                "Alex",
+                result.get(1).getName()
         );
+
+        verify(userRepository).findAll();
+    }
+
+    @Test
+    void update_ShouldUpdateUser() {
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        when(userRepository.save(user))
+                .thenReturn(user);
+
+        UserRequestDto updateRequest =
+                new UserRequestDto(
+                        "Updated Bob",
+                        "updated@test.com",
+                        30
+                );
+
+        UserResponseDto result =
+                userService.update(
+                        1L,
+                        updateRequest
+                );
+
+        assertEquals(
+                "Updated Bob",
+                result.getName()
+        );
+
+        assertEquals(
+                "updated@test.com",
+                result.getEmail()
+        );
+
+        assertEquals(
+                30,
+                result.getAge()
+        );
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void update_ShouldThrowException_WhenUserNotFound() {
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
 
         assertThrows(
-                ValidationException.class,
-                () -> userService.createUser(user)
+                UserNotFoundException.class,
+                () -> userService.update(1L, request)
         );
 
-        verify(userDao, never()).save(any());
+        verify(userRepository, never())
+                .save(any(User.class));
     }
 
     @Test
-    void createUser_ShouldThrowValidationException_WhenAgeInvalid() {
+    void delete_ShouldDeleteUser() {
 
-        User user = new User(
-                "Bob",
-                "bob@example.com",
-                -5,
-                LocalDateTime.now()
-        );
+        when(userRepository.existsById(1L))
+                .thenReturn(true);
 
-        assertThrows(
-                ValidationException.class,
-                () -> userService.createUser(user)
-        );
+        userService.delete(1L);
 
-        verify(userDao, never()).save(any());
+        verify(userRepository)
+                .existsById(1L);
+
+        verify(userRepository)
+                .deleteById(1L);
     }
 
     @Test
-    void createUser_ShouldThrowValidationException_WhenNameEmpty() {
+    void delete_ShouldThrowException_WhenUserNotFound() {
 
-        User user = new User(
-                "",
-                "bob@example.com",
-                20,
-                LocalDateTime.now()
-        );
+        when(userRepository.existsById(1L))
+                .thenReturn(false);
 
         assertThrows(
-                ValidationException.class,
-                () -> userService.createUser(user)
+                UserNotFoundException.class,
+                () -> userService.delete(1L)
         );
 
-        verify(userDao, never()).save(any());
+        verify(userRepository, never())
+                .deleteById(anyLong());
     }
 }

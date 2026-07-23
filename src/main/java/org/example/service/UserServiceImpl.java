@@ -1,75 +1,153 @@
 package org.example.service;
 
-import org.example.dao.UserDao;
-import org.example.dao.UserDaoImpl;
+import org.example.dto.UserRequestDto;
+import org.example.dto.UserResponseDto;
 import org.example.entity.User;
-import org.example.exception.ValidationException;
+import org.example.exception.UserNotFoundException;
+import org.example.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+@Service
 public class UserServiceImpl implements UserService {
-    private final UserDao userDao;
 
-    public UserServiceImpl() {
-        this(new UserDaoImpl());
-    }
+    private final UserRepository userRepository;
 
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = userDao;
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
-    public void createUser(User user) {
-        validate(user);
+    @Transactional
+    public UserResponseDto create(UserRequestDto request) {
 
-        logger.info("Создание пользователя {}", user.getEmail());
-        userDao.save(user);
-        logger.info("Пользователь успешно создан.");
+        logger.info(
+                "Создание пользователя: name={}, email={}, age={}",
+                request.getName(),
+                request.getEmail(),
+                request.getAge()
+        );
+
+        User user = new User(
+                request.getName(),
+                request.getEmail(),
+                request.getAge()
+        );
+
+        User savedUser = userRepository.save(user);
+
+        logger.info(
+                "Пользователь успешно создан: id={}",
+                savedUser.getId()
+        );
+
+        return toResponseDto(savedUser);
     }
 
     @Override
-    public User getUserById(Long id) {
-        logger.info("Поиск пользователя {}", id);
-        return userDao.findById(id);
+    @Transactional(readOnly = true)
+    public UserResponseDto getById(Long id) {
+
+        logger.info("Поиск пользователя по id={}", id);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new UserNotFoundException(id)
+                );
+
+        logger.info(
+                "Пользователь найден: id={}, email={}",
+                user.getId(),
+                user.getEmail()
+        );
+
+        return toResponseDto(user);
     }
 
     @Override
-    public List<User> getAllUsers() {
-        logger.info("Поиск всех пользователей");
-        return userDao.findAll();
+    @Transactional(readOnly = true)
+    public List<UserResponseDto> getAll() {
+
+        logger.info("Получение списка всех пользователей");
+
+        List<UserResponseDto> users = userRepository.findAll()
+                .stream()
+                .map(this::toResponseDto)
+                .toList();
+
+        logger.info(
+                "Получено пользователей: {}",
+                users.size()
+        );
+
+        return users;
     }
 
     @Override
-    public void updateUser(User user) {
-        logger.info("Обновление пользователя {}", user.getId());
-        userDao.update(user);
+    @Transactional
+    public UserResponseDto update(
+            Long id,
+            UserRequestDto request
+    ) {
+
+        logger.info(
+                "Обновление пользователя: id={}",
+                id
+        );
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new UserNotFoundException(id)
+                );
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setAge(request.getAge());
+
+        User updatedUser = userRepository.save(user);
+
+        logger.info(
+                "Пользователь успешно обновлен: id={}",
+                updatedUser.getId()
+        );
+
+        return toResponseDto(updatedUser);
     }
 
     @Override
-    public void deleteUser(Long id) {
-        logger.info("Удаление пользователя {}", id);
-        userDao.delete(id);
-    }
+    @Transactional
+    public void delete(Long id) {
 
-    private void validate(User user) {
+        logger.info(
+                "Удаление пользователя: id={}",
+                id
+        );
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            throw new ValidationException("Имя не может быть пустым.");
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
         }
 
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            throw new ValidationException("Email не может быть пустым.");
-        }
+        userRepository.deleteById(id);
 
-        if (!user.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            throw new ValidationException("Некорректный email.");
-        }
+        logger.info(
+                "Пользователь успешно удален: id={}",
+                id
+        );
+    }
 
-        if (user.getAge() == null || user.getAge() < 0 || user.getAge() > 120) {
-            throw new ValidationException("Возраст должен быть от 0 до 120.");
-        }
+    private UserResponseDto toResponseDto(User user) {
+
+        return new UserResponseDto(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getAge(),
+                user.getCreatedAt()
+        );
     }
 
     private static final Logger logger =

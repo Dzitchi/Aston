@@ -1,51 +1,93 @@
 package org.example.menu;
 
-import org.example.entity.User;
-import org.example.exception.ValidationException;
+import org.example.dto.UserRequestDto;
+import org.example.dto.UserResponseDto;
+import org.example.exception.UserNotFoundException;
 import org.example.service.UserService;
-import org.example.service.UserServiceImpl;
+import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Scanner;
 
+@Component
 public class ConsoleMenu {
 
     private final Scanner scanner = new Scanner(System.in);
-    private final UserService userService = new UserServiceImpl();
+    private final UserService userService;
+
+    public ConsoleMenu(UserService userService) {
+        this.userService = userService;
+    }
 
     public void start() {
 
         while (true) {
             printMenu();
-            int choice = Integer.parseInt(scanner.nextLine());
 
-            switch (choice) {
-                case 1 -> createUser();
-                case 2 -> findUser();
-                case 3 -> showAllUsers();
-                case 4 -> updateUser();
-                case 5 -> deleteUser();
-                case 0 -> {
-                    return;
+            try {
+                int choice = Integer.parseInt(
+                        scanner.nextLine()
+                );
+
+                switch (choice) {
+                    case 1 -> createUser();
+                    case 2 -> findUser();
+                    case 3 -> showAllUsers();
+                    case 4 -> updateUser();
+                    case 5 -> deleteUser();
+                    case 0 -> {
+                        System.out.println(
+                                "Завершение работы..."
+                        );
+                        return;
+                    }
+                    default -> System.out.println(
+                            "Неверный пункт меню."
+                    );
                 }
-                default -> System.out.println("Неверный пункт меню.");
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "Введите корректное число."
+                );
             }
+
+            System.out.println();
         }
     }
 
     private void printMenu() {
+
         System.out.println();
-        System.out.println("========== USER SERVICE ==========");
-        System.out.println("1. Создать пользователя");
-        System.out.println("2. Найти пользователя");
-        System.out.println("3. Показать всех пользователей");
-        System.out.println("4. Обновить пользователя");
-        System.out.println("5. Удалить пользователя");
-        System.out.println("0. Выход");
-        System.out.print("Выберите пункт: ");
+        System.out.println(
+                "========== USER SERVICE =========="
+        );
+        System.out.println(
+                "1. Создать пользователя"
+        );
+        System.out.println(
+                "2. Найти пользователя"
+        );
+        System.out.println(
+                "3. Показать всех пользователей"
+        );
+        System.out.println(
+                "4. Обновить пользователя"
+        );
+        System.out.println(
+                "5. Удалить пользователя"
+        );
+        System.out.println(
+                "0. Выход"
+        );
+        System.out.print(
+                "Выберите пункт: "
+        );
     }
 
     private void createUser() {
+
         try {
             System.out.print("Имя: ");
             String name = scanner.nextLine();
@@ -54,74 +96,186 @@ public class ConsoleMenu {
             String email = scanner.nextLine();
 
             System.out.print("Возраст: ");
-            Integer age = Integer.parseInt(scanner.nextLine());
-
-            User user = new User(
-                    name,
-                    email,
-                    age,
-                    LocalDateTime.now()
+            Integer age = Integer.parseInt(
+                    scanner.nextLine()
             );
 
-            userService.createUser(user);
-            System.out.println("Пользователь успешно создан.");
+            UserRequestDto request =
+                    new UserRequestDto(
+                            name,
+                            email,
+                            age
+                    );
 
-        } catch (ValidationException e) {
-            System.out.println(e.getMessage());
+            UserResponseDto user =
+                    userService.create(request);
+
+            System.out.println(
+                    "Пользователь успешно создан:"
+            );
+
+            System.out.println(user);
+
+        } catch (NumberFormatException e) {
+
+            System.out.println(
+                    "Возраст должен быть числом."
+            );
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "Ошибка: " + e.getMessage()
+            );
         }
     }
 
     private void findUser() {
 
-        System.out.print("Введите id: ");
-        Long id = Long.parseLong(scanner.nextLine());
-        User user = userService.getUserById(id);
+        try {
+            System.out.print(
+                    "Введите id: "
+            );
 
-        if (user == null) {
-            System.out.println("Пользователь не найден.");
-        } else {
+            Long id = Long.parseLong(
+                    scanner.nextLine()
+            );
+
+            UserResponseDto user =
+                    userService.getById(id);
+
             System.out.println(user);
+
+        } catch (NumberFormatException e) {
+
+            System.out.println(
+                    "ID должен быть числом."
+            );
+
+        } catch (UserNotFoundException e) {
+
+            System.out.println(
+                    e.getMessage()
+            );
         }
     }
 
     private void showAllUsers() {
 
-        userService
-                .getAllUsers()
-                .forEach(System.out::println);
+        List<UserResponseDto> users =
+                userService.getAll();
 
+        if (users.isEmpty()) {
+
+            System.out.println(
+                    "Пользователи отсутствуют."
+            );
+
+            return;
+        }
+
+        users.forEach(
+                System.out::println
+        );
     }
 
     private void updateUser() {
 
-        System.out.print("ID пользователя: ");
-        Long id = Long.parseLong(scanner.nextLine());
-        User user = userService.getUserById(id);
+        try {
+            System.out.print(
+                    "ID пользователя: "
+            );
 
-        if (user == null) {
-            System.out.println("Пользователь не найден.");
-            return;
+            Long id = Long.parseLong(
+                    scanner.nextLine()
+            );
+
+            userService.getById(id);
+
+            System.out.print(
+                    "Новое имя: "
+            );
+
+            String name =
+                    scanner.nextLine();
+
+            System.out.print(
+                    "Новый email: "
+            );
+
+            String email =
+                    scanner.nextLine();
+
+            System.out.print(
+                    "Новый возраст: "
+            );
+
+            Integer age =
+                    Integer.parseInt(
+                            scanner.nextLine()
+                    );
+
+            UserRequestDto request =
+                    new UserRequestDto(
+                            name,
+                            email,
+                            age
+                    );
+
+            UserResponseDto updatedUser =
+                    userService.update(
+                            id,
+                            request
+                    );
+
+            System.out.println(
+                    "Пользователь успешно обновлен:"
+            );
+
+            System.out.println(updatedUser);
+
+        } catch (NumberFormatException e) {
+
+            System.out.println(
+                    "ID и возраст должны быть числами."
+            );
+
+        } catch (UserNotFoundException e) {
+
+            System.out.println(
+                    e.getMessage()
+            );
         }
-
-        System.out.print("Новое имя: ");
-        user.setName(scanner.nextLine());
-
-        System.out.print("Новый email: ");
-        user.setEmail(scanner.nextLine());
-
-        System.out.print("Новый возраст: ");
-        user.setAge(Integer.parseInt(scanner.nextLine()));
-
-        userService.updateUser(user);
-        System.out.println("Пользователь обновлен.");
     }
 
     private void deleteUser() {
 
-        System.out.print("ID пользователя: ");
-        Long id = Long.parseLong(scanner.nextLine());
+        try {
+            System.out.print(
+                    "ID пользователя: "
+            );
 
-        userService.deleteUser(id);
-        System.out.println("Пользователь удален.");
+            Long id = Long.parseLong(
+                    scanner.nextLine()
+            );
+
+            userService.delete(id);
+
+            System.out.println(
+                    "Пользователь успешно удален."
+            );
+
+        } catch (NumberFormatException e) {
+
+            System.out.println(
+                    "ID должен быть числом."
+            );
+
+        } catch (UserNotFoundException e) {
+
+            System.out.println(
+                    e.getMessage()
+            );
+        }
     }
 }
