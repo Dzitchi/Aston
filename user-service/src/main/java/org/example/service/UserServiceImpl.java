@@ -1,9 +1,11 @@
 package org.example.service;
 
+import org.example.dto.UserEvent;
 import org.example.dto.UserRequestDto;
 import org.example.dto.UserResponseDto;
 import org.example.entity.User;
 import org.example.exception.UserNotFoundException;
+import org.example.kafka.UserEventProducer;
 import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +18,14 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserEventProducer userEventProducer;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            UserEventProducer userEventProducer
+    ) {
         this.userRepository = userRepository;
+        this.userEventProducer = userEventProducer;
     }
 
     @Override
@@ -39,6 +46,13 @@ public class UserServiceImpl implements UserService {
         );
 
         User savedUser = userRepository.save(user);
+
+        UserEvent event = new UserEvent(
+                "CREATE",
+                savedUser.getEmail()
+        );
+
+        userEventProducer.send(event);
 
         logger.info(
                 "Пользователь успешно создан: id={}",
@@ -127,11 +141,21 @@ public class UserServiceImpl implements UserService {
                 id
         );
 
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new UserNotFoundException(id)
+                );
 
-        userRepository.deleteById(id);
+        String email = user.getEmail();
+
+        userRepository.delete(user);
+
+        UserEvent event = new UserEvent(
+                "DELETE",
+                email
+        );
+
+        userEventProducer.send(event);
 
         logger.info(
                 "Пользователь успешно удален: id={}",
