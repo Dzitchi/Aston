@@ -5,6 +5,7 @@ import com.icegreen.greenmail.util.ServerSetupTest;
 import jakarta.mail.Message;
 import jakarta.mail.internet.MimeMessage;
 import org.example.dto.UserEvent;
+import org.example.dto.UserOperation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -64,7 +65,7 @@ class UserEventConsumerIntegrationTest {
     void createEvent_shouldSendWelcomeEmail() throws Exception {
 
         UserEvent event = new UserEvent(
-                "CREATE",
+                UserOperation.CREATE,
                 "kafka-create@example.com"
         );
 
@@ -101,7 +102,7 @@ class UserEventConsumerIntegrationTest {
     void deleteEvent_shouldSendDeletedEmail() throws Exception {
 
         UserEvent event = new UserEvent(
-                "DELETE",
+                UserOperation.DELETE,
                 "kafka-delete@example.com"
         );
 

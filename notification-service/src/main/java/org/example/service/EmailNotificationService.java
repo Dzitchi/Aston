@@ -31,9 +31,22 @@ public class EmailNotificationService {
                         "Ваш аккаунт был успешно создан."
         );
 
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
 
-        log.info("Письмо успешно отправлено на {}", email);
+            log.info(
+                    "Письмо успешно отправлено на {}",
+                    email
+            );
+        } catch (Exception e) {
+            log.error(
+                    "Ошибка отправки письма на {}",
+                    email,
+                    e
+            );
+
+            throw e;
+        }
     }
 
     public void sendUserDeletedEmail(String email) {
@@ -49,8 +62,21 @@ public class EmailNotificationService {
                         "Ваш аккаунт был удалён."
         );
 
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
 
-        log.info("Уведомление об удалении отправлено на {}", email);
+            log.info(
+                    "Уведомление об удалении отправлено на {}",
+                    email
+            );
+        } catch (Exception e) {
+            log.error(
+                    "Ошибка отправки уведомления об удалении на {}",
+                    email,
+                    e
+            );
+
+            throw e;
+        }
     }
 }

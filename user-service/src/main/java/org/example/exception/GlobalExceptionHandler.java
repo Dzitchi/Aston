@@ -19,6 +19,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleEmailAlreadyExists(
+            EmailAlreadyExistsException exception
+    ) {
+        return Map.of(
+                "error",
+                exception.getMessage()
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationException(

@@ -1,9 +1,11 @@
 package org.example.service;
 
+import org.example.dto.UserOperation;
 import org.example.dto.UserRequestDto;
 import org.example.dto.UserResponseDto;
 import org.example.entity.User;
 import org.example.exception.UserNotFoundException;
+import org.example.kafka.UserEventProducer;
 import org.example.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserEventProducer userEventProducer;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -61,6 +66,13 @@ class UserServiceImplTest {
         assertEquals(20, result.getAge());
 
         verify(userRepository).save(any(User.class));
+
+        verify(userEventProducer).send(
+                argThat(event ->
+                        UserOperation.CREATE == event.getOperation()
+                                && "bob@test.com".equals(event.getEmail())
+                )
+        );
     }
 
     @Test
@@ -161,6 +173,8 @@ class UserServiceImplTest {
 
         verify(userRepository).findById(1L);
         verify(userRepository).save(user);
+
+        verifyNoInteractions(userEventProducer);
     }
 
     @Test
@@ -176,35 +190,49 @@ class UserServiceImplTest {
 
         verify(userRepository, never())
                 .save(any(User.class));
+
+        verifyNoInteractions(userEventProducer);
     }
 
     @Test
     void delete_ShouldDeleteUser() {
 
-        when(userRepository.existsById(1L))
-                .thenReturn(true);
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
 
         userService.delete(1L);
 
         verify(userRepository)
-                .existsById(1L);
+                .findById(1L);
 
         verify(userRepository)
-                .deleteById(1L);
+                .delete(user);
+
+        verify(userEventProducer).send(
+                argThat(event ->
+                        UserOperation.DELETE == event.getOperation()
+                                && "bob@test.com".equals(event.getEmail())
+                )
+        );
     }
 
     @Test
     void delete_ShouldThrowException_WhenUserNotFound() {
 
-        when(userRepository.existsById(1L))
-                .thenReturn(false);
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
 
         assertThrows(
                 UserNotFoundException.class,
                 () -> userService.delete(1L)
         );
 
+        verify(userRepository)
+                .findById(1L);
+
         verify(userRepository, never())
-                .deleteById(anyLong());
+                .delete(any(User.class));
+
+        verifyNoInteractions(userEventProducer);
     }
 }

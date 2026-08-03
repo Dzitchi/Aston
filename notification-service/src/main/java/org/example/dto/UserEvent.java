@@ -2,22 +2,22 @@ package org.example.dto;
 
 public class UserEvent {
 
-    private String operation;
+    private UserOperation operation;
     private String email;
 
     public UserEvent() {
     }
 
-    public UserEvent(String operation, String email) {
+    public UserEvent(UserOperation operation, String email) {
         this.operation = operation;
         this.email = email;
     }
 
-    public String getOperation() {
+    public UserOperation getOperation() {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    public void setOperation(UserOperation operation) {
         this.operation = operation;
     }
 

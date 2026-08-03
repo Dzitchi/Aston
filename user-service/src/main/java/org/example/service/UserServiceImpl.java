@@ -1,9 +1,11 @@
 package org.example.service;
 
 import org.example.dto.UserEvent;
+import org.example.dto.UserOperation;
 import org.example.dto.UserRequestDto;
 import org.example.dto.UserResponseDto;
 import org.example.entity.User;
+import org.example.exception.EmailAlreadyExistsException;
 import org.example.exception.UserNotFoundException;
 import org.example.kafka.UserEventProducer;
 import org.example.repository.UserRepository;
@@ -39,6 +41,16 @@ public class UserServiceImpl implements UserService {
                 request.getAge()
         );
 
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            logger.warn(
+                    "Попытка создать пользователя с существующим email: {}",
+                    request.getEmail()
+            );
+
+            throw new EmailAlreadyExistsException(request.getEmail());
+        }
+
         User user = new User(
                 request.getName(),
                 request.getEmail(),
@@ -48,7 +60,7 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
 
         UserEvent event = new UserEvent(
-                "CREATE",
+                UserOperation.CREATE,
                 savedUser.getEmail()
         );
 
@@ -118,6 +130,18 @@ public class UserServiceImpl implements UserService {
                         new UserNotFoundException(id)
                 );
 
+        if (userRepository.existsByEmailAndIdNot(
+                request.getEmail(),
+                id
+        )) {
+            logger.warn(
+                    "Попытка изменить email на уже существующий: {}",
+                    request.getEmail()
+            );
+
+            throw new EmailAlreadyExistsException(request.getEmail());
+        }
+
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setAge(request.getAge());
@@ -151,7 +175,7 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
 
         UserEvent event = new UserEvent(
-                "DELETE",
+                UserOperation.DELETE,
                 email
         );
 

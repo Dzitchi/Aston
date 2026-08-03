@@ -1,6 +1,7 @@
 package org.example.kafka;
 
 import org.example.dto.UserEvent;
+import org.example.dto.UserOperation;
 import org.example.service.EmailNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +18,6 @@ public class UserEventConsumer {
 
     public UserEventConsumer(EmailNotificationService emailNotificationService) {
         this.emailNotificationService = emailNotificationService;
-
-        System.out.println("!!! UserEventConsumer СОЗДАН !!!");
     }
 
     @KafkaListener(topics = "user-events")
@@ -30,13 +29,13 @@ public class UserEventConsumer {
                 event.getEmail()
         );
 
-        if ("CREATE".equals(event.getOperation())) {
+        if (UserOperation.CREATE == event.getOperation()) {
 
             emailNotificationService.sendUserCreatedEmail(
                     event.getEmail()
             );
 
-        } else if ("DELETE".equals(event.getOperation())) {
+        } else if (UserOperation.DELETE == event.getOperation()) {
 
             emailNotificationService.sendUserDeletedEmail(
                     event.getEmail()
