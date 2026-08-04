@@ -1,22 +1,30 @@
 package org.example.menu;
 
+import org.example.dto.UserModel;
 import org.example.dto.UserRequestDto;
-import org.example.dto.UserResponseDto;
 import org.example.exception.UserNotFoundException;
 import org.example.service.UserService;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Scanner;
 
 @Component
-public class ConsoleMenu {
+@Profile("!test")
+public class ConsoleMenu implements CommandLineRunner {
 
     private final Scanner scanner = new Scanner(System.in);
     private final UserService userService;
 
     public ConsoleMenu(UserService userService) {
         this.userService = userService;
+    }
+
+    @Override
+    public void run(String... args) {
+        start();
     }
 
     public void start() {
@@ -35,12 +43,6 @@ public class ConsoleMenu {
                     case 3 -> showAllUsers();
                     case 4 -> updateUser();
                     case 5 -> deleteUser();
-                    case 0 -> {
-                        System.out.println(
-                                "Завершение работы..."
-                        );
-                        return;
-                    }
                     default -> System.out.println(
                             "Неверный пункт меню."
                     );
@@ -78,9 +80,6 @@ public class ConsoleMenu {
         System.out.println(
                 "5. Удалить пользователя"
         );
-        System.out.println(
-                "0. Выход"
-        );
         System.out.print(
                 "Выберите пункт: "
         );
@@ -107,7 +106,7 @@ public class ConsoleMenu {
                             age
                     );
 
-            UserResponseDto user =
+            UserModel user =
                     userService.create(request);
 
             System.out.println(
@@ -141,7 +140,7 @@ public class ConsoleMenu {
                     scanner.nextLine()
             );
 
-            UserResponseDto user =
+            UserModel user =
                     userService.getById(id);
 
             System.out.println(user);
@@ -162,7 +161,7 @@ public class ConsoleMenu {
 
     private void showAllUsers() {
 
-        List<UserResponseDto> users =
+        List<UserModel> users =
                 userService.getAll();
 
         if (users.isEmpty()) {
@@ -222,7 +221,7 @@ public class ConsoleMenu {
                             age
                     );
 
-            UserResponseDto updatedUser =
+            UserModel updatedUser =
                     userService.update(
                             id,
                             request

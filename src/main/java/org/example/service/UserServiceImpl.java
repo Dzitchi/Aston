@@ -1,7 +1,7 @@
 package org.example.service;
 
+import org.example.dto.UserModel;
 import org.example.dto.UserRequestDto;
-import org.example.dto.UserResponseDto;
 import org.example.entity.User;
 import org.example.exception.UserNotFoundException;
 import org.example.repository.UserRepository;
@@ -23,7 +23,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDto create(UserRequestDto request) {
+    public UserModel create(UserRequestDto request) {
 
         logger.info(
                 "Создание пользователя: name={}, email={}, age={}",
@@ -45,12 +45,12 @@ public class UserServiceImpl implements UserService {
                 savedUser.getId()
         );
 
-        return toResponseDto(savedUser);
+        return toUserModel(savedUser);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDto getById(Long id) {
+    public UserModel getById(Long id) {
 
         logger.info("Поиск пользователя по id={}", id);
 
@@ -65,18 +65,18 @@ public class UserServiceImpl implements UserService {
                 user.getEmail()
         );
 
-        return toResponseDto(user);
+        return toUserModel(user);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserResponseDto> getAll() {
+    public List<UserModel> getAll() {
 
         logger.info("Получение списка всех пользователей");
 
-        List<UserResponseDto> users = userRepository.findAll()
+        List<UserModel> users = userRepository.findAll()
                 .stream()
-                .map(this::toResponseDto)
+                .map(this::toUserModel)
                 .toList();
 
         logger.info(
@@ -89,7 +89,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDto update(
+    public UserModel update(
             Long id,
             UserRequestDto request
     ) {
@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
                 updatedUser.getId()
         );
 
-        return toResponseDto(updatedUser);
+        return toUserModel(updatedUser);
     }
 
     @Override
@@ -139,9 +139,9 @@ public class UserServiceImpl implements UserService {
         );
     }
 
-    private UserResponseDto toResponseDto(User user) {
+    private UserModel toUserModel(User user) {
 
-        return new UserResponseDto(
+        return new UserModel(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),

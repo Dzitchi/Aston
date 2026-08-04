@@ -1,7 +1,7 @@
 package org.example.service;
 
+import org.example.dto.UserModel;
 import org.example.dto.UserRequestDto;
-import org.example.dto.UserResponseDto;
 import org.example.entity.User;
 import org.example.exception.UserNotFoundException;
 import org.example.repository.UserRepository;
@@ -52,7 +52,7 @@ class UserServiceImplTest {
         when(userRepository.save(any(User.class)))
                 .thenReturn(user);
 
-        UserResponseDto result =
+        UserModel result =
                 userService.create(request);
 
         assertNotNull(result);
@@ -69,7 +69,7 @@ class UserServiceImplTest {
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(user));
 
-        UserResponseDto result =
+        UserModel result =
                 userService.getById(1L);
 
         assertNotNull(result);
@@ -104,7 +104,7 @@ class UserServiceImplTest {
         when(userRepository.findAll())
                 .thenReturn(List.of(user, secondUser));
 
-        List<UserResponseDto> result =
+        List<UserModel> result =
                 userService.getAll();
 
         assertEquals(2, result.size());
@@ -138,7 +138,7 @@ class UserServiceImplTest {
                         30
                 );
 
-        UserResponseDto result =
+        UserModel result =
                 userService.update(
                         1L,
                         updateRequest
