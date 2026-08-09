@@ -2,10 +2,13 @@ package org.example.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.example.dto.ErrorResponse;
 import org.example.dto.UserModel;
 import org.example.dto.UserRequestDto;
 import org.example.service.UserService;
@@ -69,7 +72,11 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Пользователь не найден"
+                    description = "Пользователь не найден",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
             )
     })
     @GetMapping("/{id}")
@@ -103,7 +110,19 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Некорректные данные"
+                    description = "Некорректные данные",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Пользователь с таким email уже существует",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
             )
     })
     @PostMapping
@@ -134,11 +153,27 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Некорректные данные"
+                    description = "Некорректные данные",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Пользователь не найден"
+                    description = "Пользователь не найден",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Пользователь с таким email уже существует",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
             )
     })
     @PutMapping("/{id}")
@@ -173,7 +208,11 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Пользователь не найден"
+                    description = "Пользователь не найден",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
             )
     })
     @DeleteMapping("/{id}")

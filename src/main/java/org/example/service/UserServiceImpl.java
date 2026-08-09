@@ -3,6 +3,7 @@ package org.example.service;
 import org.example.dto.UserModel;
 import org.example.dto.UserRequestDto;
 import org.example.entity.User;
+import org.example.exception.EmailAlreadyExistsException;
 import org.example.exception.UserNotFoundException;
 import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,12 @@ public class UserServiceImpl implements UserService {
                 request.getEmail(),
                 request.getAge()
         );
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyExistsException(
+                    request.getEmail()
+            );
+        }
 
         User user = new User(
                 request.getName(),
@@ -103,6 +110,18 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() ->
                         new UserNotFoundException(id)
                 );
+
+        if (userRepository.existsByEmailAndIdNot(
+                request.getEmail(),
+                id
+        )) {
+            logger.warn(
+                    "Попытка изменить email на уже существующий: {}",
+                    request.getEmail()
+            );
+
+            throw new EmailAlreadyExistsException(request.getEmail());
+        }
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
