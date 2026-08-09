@@ -5,8 +5,9 @@ import org.example.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -70,7 +71,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    void create_ShouldReturnCreatedUser()
+    void create_ShouldReturnCreatedUserWithHateoasLinks()
             throws Exception {
 
         String json = """
@@ -95,6 +96,10 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.age")
                         .value(20))
                 .andExpect(jsonPath("$.createdAt")
+                        .exists())
+                .andExpect(jsonPath("$._links.self.href")
+                        .exists())
+                .andExpect(jsonPath("$._links.users.href")
                         .exists());
     }
 
@@ -159,7 +164,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    void getAll_ShouldReturnUsers()
+    void getAll_ShouldReturnUsersWithHateoasLinks()
             throws Exception {
 
         userRepository.save(
@@ -171,14 +176,30 @@ class UserControllerIntegrationTest {
         );
 
         mockMvc.perform(get("/api/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Bob"))
-                .andExpect(jsonPath("$[0].email").value("bob@test.com"));
+                .andExpect(status()
+                        .isOk())
+                .andExpect(jsonPath("$._embedded")
+                        .exists())
+                .andExpect(jsonPath("$._embedded.userResponseDtoList")
+                        .isArray())
+                .andExpect(jsonPath("$._embedded.userResponseDtoList.length()")
+                        .value(1))
+
+                .andExpect(jsonPath("$._embedded.userResponseDtoList[0].name")
+                        .value("Bob"))
+                .andExpect(jsonPath("$._embedded.userResponseDtoList[0].email")
+                        .value("bob@test.com"))
+
+                .andExpect(jsonPath("$._embedded.userResponseDtoList[0]._links.self.href")
+                        .exists())
+                .andExpect(jsonPath("$._embedded.userResponseDtoList[0]._links.users.href")
+                        .exists())
+                .andExpect(jsonPath("$._links.self.href")
+                        .exists());
     }
 
     @Test
-    void getById_ShouldReturnUser()
+    void getById_ShouldReturnUserWithHateoasLinks()
             throws Exception {
 
         User user = userRepository.save(
@@ -196,11 +217,20 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.id")
                         .value(user.getId()))
                 .andExpect(jsonPath("$.name")
-                        .value("Bob"));
+                        .value("Bob"))
+                .andExpect(jsonPath("$.email")
+                        .value("bob@test.com"))
+                .andExpect(jsonPath("$.age")
+                        .value(20))
+
+                .andExpect(jsonPath("$._links.self.href")
+                        .value( "http://localhost/api/users/" + user.getId() ))
+                .andExpect(jsonPath("$._links.users.href")
+                        .value( "http://localhost/api/users" ));
     }
 
     @Test
-    void update_ShouldUpdateUser()
+    void update_ShouldUpdateUserAndReturnHateoasLinks()
             throws Exception {
 
         User user = userRepository.save(
@@ -230,7 +260,34 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.email")
                         .value("updated@test.com"))
                 .andExpect(jsonPath("$.age")
-                        .value(30));
+                        .value(30))
+
+                .andExpect(jsonPath("$._links.self.href")
+                        .exists())
+                .andExpect(jsonPath("$._links.users.href")
+                        .exists());
+    }
+
+    @Test
+    void update_ShouldReturnNotFound_WhenUserDoesNotExist()
+            throws Exception {
+
+        String json = """
+                {
+                    "name": "Updated Bob",
+                    "email": "updated@test.com",
+                    "age": 30
+                }
+                """;
+
+        mockMvc.perform(
+                        put("/api/users/999")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(json)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error")
+                        .value("Пользователь с id 999 не найден"));
     }
 
     @Test
@@ -254,5 +311,17 @@ class UserControllerIntegrationTest {
                         get("/api/users/" + user.getId())
                 )
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void delete_ShouldReturnNotFound_WhenUserDoesNotExist()
+            throws Exception {
+
+        mockMvc.perform(
+                        delete("/api/users/999")
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error")
+                        .value("Пользователь с id 999 не найден"));
     }
 }
