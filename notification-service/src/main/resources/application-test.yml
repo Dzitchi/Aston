@@ -1,0 +1,16 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: latest
+  mail:
+    host: localhost
+    port: 3025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false

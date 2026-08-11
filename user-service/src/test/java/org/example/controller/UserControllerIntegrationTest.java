@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import org.example.entity.User;
+import org.example.kafka.UserEventProducer;
 import org.example.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -63,6 +65,9 @@ class UserControllerIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockitoBean
+    private UserEventProducer userEventProducer;
 
     @BeforeEach
     void setUp() {
