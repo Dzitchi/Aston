@@ -6,10 +6,12 @@ spring:
     loadbalancer:
       resilience4j:
         enabled: true
+
     gateway:
       httpclient:
-        connect-timeout: 2000
-        response-timeout: 3s
+        connect-timeout: 5000
+        response-timeout: 5s
+
       server:
         webflux:
           routes:
@@ -36,13 +38,39 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,gateway
+
   endpoint:
     gateway:
       enabled: true
+
+resilience4j:
+  timelimiter:
+    instances:
+      userServiceCircuitBreaker:
+        timeoutDuration: 5s
+
+      notificationServiceCircuitBreaker:
+        timeoutDuration: 5s
+
+  circuitbreaker:
+    instances:
+      userServiceCircuitBreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+
+      notificationServiceCircuitBreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
